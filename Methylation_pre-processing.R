@@ -26,6 +26,8 @@ library(ENmix)
 library(wateRmelon)
 require(MASS)
 require(broom)
+library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
+
 
 # load files
 targets = read.table(opt$target,h=T,sep = "\t")
@@ -188,6 +190,11 @@ save(fun2, file = "fun_nodup.RData")
 ########################
 # remove XY probes
 data(Locations)
+print(dim(Locations))
+
+if(nrow(Locations)<800000){
+  warning("Location object too small. 850K or 450K?")
+}
 XY <- rownames(Locations[Locations$chr%in%c("chrY","chrX"),])
 fun2<- fun2[ ! featureNames(fun2) %in% XY, ]
 rm(XY)
