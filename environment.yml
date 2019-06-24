@@ -1,0 +1,8 @@
+name: methylation_preprocessing
+channels:
+          - conda-forge
+          - bioconda
+          - defaults
+dependencies:
+          - bioconductor-minfi=1.26.2
+          - bioconductor-enmix=1.18.0
