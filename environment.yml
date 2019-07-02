@@ -1,8 +1,9 @@
 name: methylation_preprocessing
 channels:
-          - conda-forge
+          - r
           - bioconda
+          - conda-forge
           - defaults
 dependencies:
-          - bioconductor-minfi=1.26.2
           - bioconductor-enmix=1.18.0
+          - r-broom=0.5.0
