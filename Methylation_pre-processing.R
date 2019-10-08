@@ -10,6 +10,7 @@ library("optparse")
 option_list = list(
   make_option(c("-f", "--folder"), type="character", default=".", help="folder with idat files [default= %default]", metavar="character"),
   make_option(c("-t", "--target"), type="character", default=".", help="target file with sample information [default= %default]", metavar="character"),
+  make_option(c("-p", "--sep"), type="character", default="\t", help="field separator for target file [default= %default]", metavar="character"),
   make_option(c("-c", "--crossreac"), type="character", default=NULL, help="file with list of cross-reactive probes [default= %default]", metavar="character"),
   make_option(c("-o", "--out"), type="character", default="out", help="output directory name [default= %default]", metavar="character"),
   make_option(c("-s", "--snp_filter"), action="store_true", default=FALSE, type="logical", help="filter SNPs-associated probes [default= %default]", metavar="logical"),
@@ -30,9 +31,10 @@ library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
 
 
 # load files
-targets = read.table(opt$target,h=T,sep = "\t")
+targets = read.table(opt$target,h=T,sep = opt$sep)
+if(!is.null(opt$crossreac)) Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
 colnames(targets) = tolower(colnames(targets))
-rownames(targets) <- targets$barcode
+rownames(targets) <- as.character(targets$barcode)
 targets$Basename <- rownames(targets)
 head(targets)
 RGSet <- read.metharray.exp(base = opt$folder, targets = targets, recursive = T)
@@ -106,7 +108,7 @@ par(mfrow=c(K,K),family="Times",las=1)
 for(i in 1:K){
   for(j in 1:K){
     plot(sva[,j], sva[,i], col=rainbow(20)[as.factor(pData(RGSet)$sentrix_id)],pch=as.numeric(as.factor(pData(RGSet)$sentrix_position)) ,   
-         xlab=paste("SV",j),ylab=paste("SV",j),main="Effects of Sentrix id (color) & Sentrix position (shape)")
+         xlab=paste("SV",j),ylab=paste("SV",i),main="Effects of Sentrix id (color) & Sentrix position (shape)")
   }
 }
 #legend("bottomright",legend = c( levels(as.factor(metaM[,22])),levels(as.factor(metaM[,13]))), col=c(colClustLNEN,1,1),pch=c(16,16,16,16,17) )
@@ -120,21 +122,27 @@ rm(RGSet)
 save(fun, file = "fun.RData")
 
 # sex prediction
-predictedSex <- getSex(gset, cutoff = -2)$predictedSex
-
 pdf("Sex_pred.pdf",h=10,w=10)
-plotSex(getSex(gset, cutoff = -2),id = pData(gset)$barcode)
+object = getSex(gset, cutoff = -2)
+id     = pData(gset)$barcode
+plot(x = object$xMed, y = object$yMed, type = "n", xlab = "X chr, median total intensity (log2)", 
+        ylab = "Y chr, median total intensity (log2)")
+text(x = object$xMed, y = object$yMed, labels = id, col = ifelse(object$predictedSex == 
+        "M", "deepskyblue", "deeppink3"))
+legend("bottomleft", c("M", "F"), col = c("deepskyblue", 
+        "deeppink3"), pch = 16)
+#plotSex(getSex(gset, cutoff = -2),id = pData(gset)$barcode)
 dev.off()
 
 pData = pData(fun)
-pData$predictedSex = predictedSex
+pData$predictedSex = object$predictedSex
 
-write.csv( data.frame("Sample"=as.character(pData(gset)$sample_id), "Prediction"=predictedSex,
+write.csv( data.frame("Sample"=as.character(pData(gset)$sample_id), "Prediction"=object$predictedSex,
                       "Clinical_data"=as.character(pData(gset)$sex),
                       row.names = pData(gset)$barcode), file = "Sex_pred.csv",quote = F)
 
 print("Samples with mismatching sex and predicted sex:")
-print( pData(gset)[which( as.character(pData(gset)$sex)!=predictedSex ),] )
+print( pData(gset)[which( as.character(pData(gset)$sex)!=object$predictedSex ),] )
 rm(gset)
 
 # Age Prediction
@@ -203,7 +211,7 @@ print(fun2)
 # remove cross-reactive probes
 if(!is.null(opt$crossreac)){
     print("Remove cross-reactive probes")
-    Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
+#    Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
     fun2<- fun2[ ! featureNames(fun2) %in% Cross_reactive, ] 
     rm(Cross_reactive)
     print(fun2)
@@ -255,9 +263,9 @@ lev = apply(pData2,2,function(x) table(x))
 pData2 = pData2[,(sapply(lev,max,na.rm=T)>1)&(sapply(lev,nrow)>1) ]
 
 
-svg("PCA.svg",h=6,w=6)
+#svg("PCA.svg",h=6,w=6)
 pcrplot(minfi::getBeta(fun_filtered), cov= pData2, npc=20)
-dev.off()
+#dev.off()
 
 # write session info
 writeLines(capture.output(sessionInfo()), "sessionInfo.txt")
