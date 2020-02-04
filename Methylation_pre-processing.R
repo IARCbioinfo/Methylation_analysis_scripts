@@ -30,6 +30,11 @@ require(broom)
 library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
 
 
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
+
 # load files
 targets = read.table(opt$target,h=T,sep = opt$sep)
 if(!is.null(opt$crossreac)) Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
