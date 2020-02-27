@@ -173,7 +173,7 @@ save(fun, file = "fun.RData")
 nb.levels <- length(unique(targets$sentrix_position))
 mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
 jpeg(paste("NormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
-densityPlot(getBeta(fun), sampGroups = targets$sentrix_id, pal=mycolors, ylim=c(0,5))
+densityPlot(getBeta(fun), sampGroups = targets$sentrix_position, pal=mycolors, ylim=c(0,5))
 dev.off()
 
 # Optional: Age Prediction
