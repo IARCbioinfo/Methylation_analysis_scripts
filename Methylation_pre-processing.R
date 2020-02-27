@@ -27,15 +27,15 @@ library(ENmix)
 library(wateRmelon)
 require(MASS)
 require(broom)
-library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
 
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 
-BiocManager::install("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
+BiocManager::install("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
 
-# load files
+# 1. Load files
 targets = read.table(opt$target,h=T,sep = opt$sep)
 if(!is.null(opt$crossreac)) Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
 colnames(targets) = tolower(colnames(targets))
@@ -43,27 +43,44 @@ rownames(targets) <- as.character(targets$barcode)
 targets$Basename <- rownames(targets)
 head(targets)
 RGSet <- read.metharray.exp(base = opt$folder, targets = targets, recursive = T)
+# Give RGSet meaningful names (here targets$sample_id)
+targets$ID = paste(targets$sample_id)
+sampleNames(RGSet) = targets$ID
 print(RGSet)
 
-# write data
+# 2. Write data
 outdir    <- opt$out
 dir.create(outdir, showWarnings = FALSE)
 setwd(outdir)
 save(RGSet, file="RGSet.RData")
 
-# Quality control
+# 3. Quality control
 dir.create("QC/", showWarnings = FALSE)
 setwd("QC/")
+# 3a. Plot quality control plots (package ENmix)
 plotCtrl(RGSet)
 setwd("../")
-qcReport(RGSet, pdf= "QC/qcReport.pdf")
 
+# 3b. Make PDF QC report (package minfi)
+# To include colouring samples by variable such as sentrix_position include argument: sampGroups=targets$sentrix_position
+qcReport(RGSet, sampNames = targets$sample_id, pdf = "QC/qcReport.pdf")
+
+# 3c. Make pre-normalisation beta density plots
+# Here samples are coloured by sentrix_position
+nb.levels <- length(unique(targets$sentrix_position))
+mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
+jpeg(paste("UnormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
+densityPlot(RGSet, sampGroups = targets$sentrix_id, pal=mycolors, ylim=c(0,5))
+dev.off()
+
+# 3d. Create MSet and gset for further QC
 MSet <- preprocessRaw(RGSet)
 save(MSet, file="MSet.RData")
 ratioSet <- ratioConvert(MSet, what = "both", keepCN = TRUE)
 gset <- mapToGenome(ratioSet, mergeManifest=T)
 save(gset, file="gset.RData")
 
+# 3e. Perform QC on MSet and plot methylated versus unmethylated intensities
 qc <- getQC(MSet)
 rm(MSet)
 svg("QC/Meth-unmeth_intensities.svg",h=4,w=4)
@@ -71,17 +88,22 @@ par(mfrow=c(1,1),family="Times",las=1)
 plotQC(qc) # If U and/or M intensity log medians are <10.5, sample is by default of bad quality
 dev.off()
 
-#det p values
+# 4. Create raw unormalised and unfiltered beta and m tables for later comparison
+mRaw <- getM(gset)
+betaRaw <- getBeta(gset)
+
+# 5. Calculate detection p values and plot 
+# Here the samples are coloured by sentrix ID to check for poor performing chips
 detP <- detectionP(RGSet)
 pdf("QC/detection_pvalues.pdf",h=4,w=4)
 par(mfrow=c(1,1),family="Times",las=1)
-barplot(colMeans(detP), las=2, cex.names=0.8, ylim=c(0,0.002), ylab="Mean detection p-values")
-abline(h=0.05,col="red")
+barplot(colMeans(detP), col=as.numeric(factor(targets$sentrix_id)), las=2, cex.names=0.8, ylim=c(0,0.05), ylab="Mean detection p-values")
+abline(h=0.01,col="red")
 dev.off()
 
 if(sum(colMeans(detP)>0.01)>0 ) print(paste("Warning: sample", names(colMeans(detP))[colMeans(detP)>0.01], "has >0.01 mean detection p-value" ) )
 
-# Surrogate variables and Principal components
+# 6. Surrogate variables and Principal components
 # Surrogate variables derived from intensity data for non-negative internal control probes.
 # These variables can be modeled in association analysis to adjust for experimental batch effects.
 sva<-ctrlsva(RGSet, percvar = 0.9, flag = 1)
@@ -121,42 +143,45 @@ for(i in 1:K){
 #legend("bottomright",legend = levels(as.factor(metaM[,2])), col=1:8,pch=16)
 dev.off() ## to check
 
-# Normalization
-fun <- preprocessFunnorm(RGSet) # includes NOOB background/dye correction
+# 7. Predict sex, plot clinical and predicted sex, identify mismatches
+object = getSex(gset, cutoff = -2) # Default cutoff is -2
+pdf("Sex_predicted.pdf",h=10,w=10)
+plot(x = object$xMed, y = object$yMed, type = "n", xlab = "X chr, median total intensity (log2)", ylab = "Y chr, median total intensity (log2)")
+text(x = object$xMed, y = object$yMed, labels = targets$sample_id, col = ifelse(object$predictedSex == "M", "deepskyblue", "deeppink3"))
+legend("bottomleft", c("M", "F"), col = c("deepskyblue", "deeppink3"), pch = 16)
+dev.off()
+
+object2 <- as.data.frame(object)
+object2 <- merge(object2, targets, by.x="row.names", by.y="sample_id")
+pdf("Sex_clinical.pdf",h=10,w=10)
+plot(x = object2$xMed, y = object2$yMed, type = "n", xlab = "X chr, median total intensity (log2)", ylab = "Y chr, median total intensity (log2)")
+text(x = object2$xMed, y = object2$yMed, labels = object2$Row.names, col = ifelse(object2$sex == "M", "deepskyblue", "deeppink3"))
+legend("bottomleft", c("M", "F"), col = c("deepskyblue", "deeppink3"), pch = 16)
+dev.off()
+
+# Bind the predicted sex to the Targets file and identify mismatch 
+targets$predSex <- object$predictedSex
+targets[targets$sex != targets$predSex,]
+
+# 8. Normalization
+# Specify sex as clinical or predicted sex depending on which one is accurate 
+fun <- preprocessFunnorm(RGSet, sex=targets$sex) # includes NOOB background/dye correction
 rm(RGSet)
 save(fun, file = "fun.RData")
 
-# sex prediction
-pdf("Sex_pred.pdf",h=10,w=10)
-object = getSex(gset, cutoff = -2)
-id     = pData(gset)$barcode
-plot(x = object$xMed, y = object$yMed, type = "n", xlab = "X chr, median total intensity (log2)", 
-        ylab = "Y chr, median total intensity (log2)")
-text(x = object$xMed, y = object$yMed, labels = id, col = ifelse(object$predictedSex == 
-        "M", "deepskyblue", "deeppink3"))
-legend("bottomleft", c("M", "F"), col = c("deepskyblue", 
-        "deeppink3"), pch = 16)
-#plotSex(getSex(gset, cutoff = -2),id = pData(gset)$barcode)
+# Post normalisation beta density plots
+nb.levels <- length(unique(targets$sentrix_position))
+mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
+jpeg(paste("NormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
+densityPlot(getBeta(fun), sampGroups = targets$sentrix_id, pal=mycolors, ylim=c(0,5))
 dev.off()
 
-pData = pData(fun)
-pData$predictedSex = object$predictedSex
-
-write.csv( data.frame("Sample"=as.character(pData(gset)$sample_id), "Prediction"=object$predictedSex,
-                      "Clinical_data"=as.character(pData(gset)$sex),
-                      row.names = pData(gset)$barcode), file = "Sex_pred.csv",quote = F)
-
-print("Samples with mismatching sex and predicted sex:")
-print( pData(gset)[which( as.character(pData(gset)$sex)!=object$predictedSex ),] )
-rm(gset)
-
-# Age Prediction
+# Optional: Age Prediction
 predicted_age <- agep(minfi::getBeta(fun))
 pData$predictedAge = predicted_age
 write.csv( data.frame("Sample"=as.character(pData$sample_id),
                       "Clinical_data"=as.character(pData$age),
                       "Prediction"=predicted_age,row.names = pData$barcode), file = "Age_pred.csv",quote = F)
-
 
 pdf("Age_pred.pdf")
 par(family="Times",las=1)
@@ -167,8 +192,7 @@ text( 0,10 , paste0("r=",ct$estimate) ,pos = 4 )
 text( 0,0 , paste0("p=",ct$p.value) ,pos = 4 )
 dev.off()
 
-
-# Smoking "prediction"
+# Optional: Smoking "prediction"
 cg05575921 <- minfi::getBeta(fun)["cg05575921", ] # within AHRR locus
 pdf("Smokig_prediction.pdf",h=6,w=6)
 par(mfrow=c(1,1), mar=c(8,4,4,4),family="NimbusSan",las=2)
@@ -182,7 +206,7 @@ dev.off()
 #########################
 ### Filtering samples ###
 #########################
-# remove duplicates
+# 1. Remove duplicates
 pData2 <- pData[order(pData(fun)$sample_id), ]
 dim(pData2)
 head(pData2)
@@ -196,24 +220,22 @@ if( length(dups)>0 ){
 }
 fun2 <- fun[, rownames(pData2)]
 
+# 2. Save normalised unfiltered data 
 save(fun2, file = "fun_nodup.RData")
 
 ########################
 ### Filtering Probes ###
 ########################
-# remove XY probes
-data(Locations)
-print(dim(Locations))
-
-if(nrow(Locations)<800000){
-  warning("Location object too small. 850K or 450K?")
-}
-XY <- rownames(Locations[Locations$chr%in%c("chrY","chrX"),])
-fun2<- fun2[ ! featureNames(fun2) %in% XY, ]
-rm(XY)
+# 1. Remove any probes that have failed in one or more samples
+detP2 = detP[rownames(fun2),colnames(fun2)]
+rm(detP)
+failed = which(rowSums(detP2 < 0.01) != ncol(fun2) )
+fun2 <- fun2[ -failed, ]
+rm(detP2)
+rm(failed)
 print(fun2)
 
-# remove cross-reactive probes
+# 2. Remove cross-reactive probes
 if(!is.null(opt$crossreac)){
     print("Remove cross-reactive probes")
 #    Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
@@ -224,26 +246,22 @@ if(!is.null(opt$crossreac)){
     print("No file with cross-reactive probes supplied; to remove cross-reactive probes, use the -c option")
 }
 
-# remove SNP-containing probes
+# 3. Remove XY probes
+ann.850k = getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+autosomes = !(rownames(fun2) %in% ann.850k$Name[ann.850k$chr %in% c("chrX","chrY")])
+fun2 = fun2[autosomes,]
+print(fun2)
+
+# 4. Remove SNP-containing probes
 if(as.logical(opt$snp_filter)){
     print("Remove SNP-associated probes")
-    fun2 = dropLociWithSnps(fun2,maf = 0.05) # alternative?
+    fun2 = dropLociWithSnps(fun2, snps=c("SBE", "CpG"), maf = 0.05) # alternative?
     print(fun2)
 }else{
     print("Do not remove SNP-associated probes")
 }
 
-# remove any probes that have failed in one or more samples
-detP2 = detP[rownames(fun2),colnames(fun2)]
-rm(detP)
-failed = which(rowSums(detP2 < 0.01) != ncol(fun2) )
-fun2 <- fun2[ -failed ,]
-rm(detP2)
-rm(failed)
-print(fun2)
-save(fun2, file="fun2.RData")
-
-# remove multimodal CpGs
+# Optional: Remove multimodal CpGs
 if(as.logical(opt$multimodal_filter)){
     print("Remove multimodal beta-values probes")
     nmode<- nmode.mc(minfi::getBeta(fun2), minN = 3, modedist=0.2, nCores = 1)
@@ -254,11 +272,32 @@ if(as.logical(opt$multimodal_filter)){
 }else{
      print("Do not remove multimodal beta-values probes")
 }
+
+# 5. Save final files and create analysis tables 
 fun_filtered = fun2
 rm(fun2)
 save(fun_filtered, file="fun_filtered.RData")
+betaNorm <- getBeta(fun_filtered)
+mNorm <- getM(fun_filtered)
 
-#  Principal component regression analysis plots
+#################
+# Check for NA and -Inf values
+################
+betaNorm.na <- betaNorm[!complete.cases(betaNorm),]
+dim(betaNorm.na)
+# Should be [1] 0 x ncol(betaNorm)
+
+TestInf <- which(apply(mNorm,1,function(i) sum(is.infinite(i)))>0)
+# Integer of probes and row numbers
+mNoInf <- mNorm
+mNoInf[!is.finite(mNoInf)]<-min(mNoInf[is.finite(mNoInf)])
+TestInf2 <- which(apply(mNoInf,1,function(i) sum(is.infinite(i)))>0)
+TestInf2
+# Should be: named integer(0)
+
+################
+# Principal component regression analysis plots
+###############
 # select variables of interest
 head(pData(fun_filtered))
 pData2 <- data.frame(pData(fun_filtered))
@@ -266,7 +305,6 @@ pData2$sentrix_id = as.factor(pData2$sentrix_id)
 
 lev = apply(pData2,2,function(x) table(x))
 pData2 = pData2[,(sapply(lev,max,na.rm=T)>1)&(sapply(lev,nrow)>1) ]
-
 
 #svg("PCA.svg",h=6,w=6)
 pcrplot(minfi::getBeta(fun_filtered), cov= pData2, npc=20)
