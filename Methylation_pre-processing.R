@@ -283,8 +283,10 @@ mNorm <- getM(fun_filtered)
 #################
 # Check for NA and -Inf values
 ################
-betaNorm.na <- betaNorm[!complete.cases(betaNorm),]
-dim(betaNorm.na)
+betaRaw.na <- betaRaw[!complete.cases(betaRaw),]
+dim(betaRaw.na)
+NaBetas <- rownames(betaRaw.na) # probes with an NA in raw beta table
+betaNAsNorm <- betaNormSNPs[rownames(betaNormSNPs) %in% NaBetas, ] # Ensure those probes are not in normalised and filtered beta table
 # Should be [1] 0 x ncol(betaNorm)
 
 TestInf <- which(apply(mNorm,1,function(i) sum(is.infinite(i)))>0)
