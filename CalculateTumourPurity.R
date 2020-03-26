@@ -25,7 +25,7 @@ CalculateLump <- function(BetaTable) {
   }
   Purity <- sapply(Mean, LumpCalc)
   FinalTable <- rbind(BetaLump, Mean, Purity)
-  rownames(FinalTable)[c(43,44)] <- c("Mean", "Purity")
+  rownames(FinalTable)[c(nrow(FinalTable)-1,nrow(FinalTable))] <- c("Mean", "Purity")
   return(FinalTable)
 }
 
