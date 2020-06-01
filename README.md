@@ -37,6 +37,8 @@ The script involves 5 steps
 - **Data filtering** of poor quality and cross reactive probes, XY chromosome probes and SNP-associated probes
 - **Making analysis-ready beta and m tables** 
 
+![DNAmethylationProcess](https://github.com/IARCbioinfo/Methylation_analysis_scripts/blob/master/DNAmethylationProcess.png)
+
 ### Output
 - RGSet.RData file
 - MSet.RData file
@@ -46,7 +48,7 @@ The script involves 5 steps
 - Fun/Fun1/Fun2/Fun3.RData files
 - Normalised and filtered beta and m value tables
 
-#### QC output plots
+### QC output plots
 | **PLOT NAME** | **DESCRIPTION** |
 |-----------|-------------| 
 *STAINING Green/Red* | Staining controls are used to examine the efficiency of the staining step in both the red and green channels and are independent of the hybridisation and extension step |
