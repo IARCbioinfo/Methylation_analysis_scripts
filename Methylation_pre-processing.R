@@ -88,7 +88,6 @@ gset <- mapToGenome(ratioSet, mergeManifest=T)
 
 # C.5. Perform QC on MSet and plot methylated versus unmethylated intensities
 qc <- getQC(MSet)
-rm(MSet)
 svg("QC/Meth-unmeth_intensities.svg",h=4,w=4)
 par(mfrow=c(1,1),family="Times",las=1)
 plotQC(qc) # If U and/or M intensity log medians are <10.5, sample is by default of bad quality
@@ -111,7 +110,7 @@ RGSet <- RGSet[,keep.samples]
 MSet <- MSet[,keep.samples]
 ratioSet <- ratioSet[,keep.samples]
 gset <- gset[,keep.samples]
-targets = targets[keep.samples,]
+targets <- targets[keep.samples,]
 
 # E) Write files
 outdir <- opt$out
@@ -188,7 +187,6 @@ targets[targets$sex != targets$predSex,]
 # I) Normalization
 # Specify sex as clinical or predicted sex depending on which one is accurate 
 fun <- preprocessFunnorm(RGSet, sex=targets$sex) # includes NOOB background/dye correction
-rm(RGSet)
 save(fun, file = "Fun.RData")
 
 # Post normalisation beta density plots
@@ -314,10 +312,10 @@ TestInf2 # Should be named integer(0)
 dim(mNoInf) 
 
 # Write tables
-write.tabe(targets, file="TargetsFile.csv", sep=",", col.names=NA)
+write.table(targets, file="TargetsFile.csv", sep=",", col.names=NA)
 write.table(betaNorm, file="NormalisedFilteredBetaTable.csv", sep=",", col.names=NA)
-write.table(mNorm, file="NormFilteredMTable.csv", sep=",", col.names=NA)
-write.table(mNoInf, file="NormFilteredMTable_noInf.csv", sep=",", col.names=NA)
+write.table(mNorm, file="NormalisedFilteredMTable.csv", sep=",", col.names=NA)
+write.table(mNoInf, file="NormalisedFilteredMTable_noInf.csv", sep=",", col.names=NA)
 
 
 
