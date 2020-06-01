@@ -48,6 +48,7 @@ The script involves 5 steps
 
 #### QC output plots
 | **Plot Name** | **DESCRIPTION** |
+|-----------|-------------| 
 *STAINING Green/Red* | Staining controls are used to examine the efficiency of the staining step in both the red and green channels and are independent of the hybridisation and extension step |
 *EXTENSION Green/Red* | Extension controls test the extension efficiency of A, T, C and G nucleotides from a hairpin probe, and are therefore sample-independent. A and T should be monitored in the red channel, C and G should be monitored in the green channel. |
 *TARGET REMOVAL Green/Red* | Target removal controls test the efficiency of the stripping step after the extension reaction. In contrast to allele-specific extension, the control oligos are extended using the probe sequence as a template. This process generates labelled targets. The probe sequences are designed such that extension from the probe does not occur. All target removal controls should result in low signal compared to the hybridisation controls, indicating that the targets were removed efficiently after extension. Target removal controls are present in the hybridisation buffer RA1. The performance of the target removal controls should be monitored only in the green channel |
