@@ -3,14 +3,16 @@ R scripts for Illumina array analyses
 
 ## Pre-processing: *Methylation_pre-processing.R*
 
-This script performs Illumina EPIC 850K array pre-processing and QC from idat files. 
+This script performs Illumina EPIC 850K array and Illumina 450K pre-processing and QC from idat files. 
 
 ## Prerequisites
 This R script requires the following packages:
 - minfi
 - ENmix
+- wateRmelon
 - MASS
 - broom
+- RColorBrewer
 
 ### Usage
 ```bash
