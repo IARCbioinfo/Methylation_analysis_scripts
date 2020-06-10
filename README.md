@@ -40,7 +40,7 @@ Rscript Methylation_pre-processing.R -f input_folder -t targetfile.txt [options]
 |-----------|--------------:|-------------| 
 *-f* | . | folder with idat files |
 *-o* | out | output directory name |
-*-t* |  . | target file in csv format with sample information : sample_id, plate_id (can be null), sample_well (can be null), sentrix_id (like "3999492078", sentrix_position (like "R01C01") |
+*-t* |  . | target file in csv format with sample information : sample_id, plate_id (can be null), sample_well (can be null), sentrix_id (like "3999492078"), sentrix_position (like "R01C01") |
 *-c* | NULL | file with list of cross-reactive probes |
 *-s* | FALSE | filter SNPs-associated probes |
 *-m* | FALSE | filter multimodal probes |
