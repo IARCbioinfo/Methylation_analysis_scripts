@@ -257,7 +257,7 @@ save(detP, detP2, file="PdetectionTables.RData")
 # L) Remove cross-reactive probes
 if(!is.null(opt$crossreac)){
     print("Remove cross-reactive probes")
-# Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
+ Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
     fun1 <- fun1[ ! featureNames(fun1) %in% Cross_reactive, ] 
     print(fun1)
 }else{
