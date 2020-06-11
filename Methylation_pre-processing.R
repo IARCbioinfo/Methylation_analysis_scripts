@@ -86,7 +86,7 @@ gset <- mapToGenome(ratioSet, mergeManifest=T)
 
 # C.5. Perform QC on MSet and plot methylated versus unmethylated intensities
 qc <- getQC(MSet)
-svg("QC/Meth-unmeth_intensities.svg",h=4,w=4)
+pdf("QC/Meth-unmeth_intensities.pdf",h=4,w=4)
 par(mfrow=c(1,1),family="Times",las=1)
 plotQC(qc) # If U and/or M intensity log medians are <10.5, sample is by default of bad quality
 dev.off()
