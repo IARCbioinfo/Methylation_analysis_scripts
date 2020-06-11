@@ -163,7 +163,7 @@ for(i in 1:K){
 #legend("bottomright",legend = levels(as.factor(metaM[,2])), col=1:8,pch=16)
 dev.off() ## to check
 
-# H) Predict sex, plot clinical and predicted sex, identify mismatches
+# H) Predict sex, plot predicted sex (and if available, plot clinical sex and identify mismatches)
 object = getSex(gset, cutoff = -2) # Default cutoff is -2
 pdf("Sex_predicted.pdf",h=10,w=10)
 plot(x = object$xMed, y = object$yMed, type = "n", xlab = "X chr, median total intensity (log2)", ylab = "Y chr, median total intensity (log2)")
@@ -171,7 +171,7 @@ text(x = object$xMed, y = object$yMed, labels = targets$sample_id, col = ifelse(
 legend("bottomleft", c("M", "F"), col = c("deepskyblue", "deeppink3"), pch = 16)
 dev.off()
 
-object2 <- as.data.frame(object)
+object2 <- as.data.frame(object) # To create clinical sex plot
 object2 <- merge(object2, targets, by.x="row.names", by.y="sample_id")
 pdf("Sex_clinical.pdf",h=10,w=10)
 plot(x = object2$xMed, y = object2$yMed, type = "n", xlab = "X chr, median total intensity (log2)", ylab = "Y chr, median total intensity (log2)")
