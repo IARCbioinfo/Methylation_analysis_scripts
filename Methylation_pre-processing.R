@@ -41,12 +41,6 @@ library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 ann = getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 # crossreac file: "48639-non-specific-probes-Illumina450k.csv"
 
-# To install the specific Illumina packages above
-# No more needed if we add them in the required packages in the readme
-#if (!requireNamespace("BiocManager", quietly = TRUE))
-#  install.packages("BiocManager")
-#BiocManager::install("IlluminaHumanMethylationEPICanno.ilm10b4.hg19") # Replace with relevant packages 
-
 # A) Load files
 targets = read.table(opt$target,h=T,sep = opt$sep)
 if(!is.null(opt$crossreac)) Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
