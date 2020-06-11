@@ -13,7 +13,7 @@ option_list = list(
   make_option(c("-p", "--sep"), type="character", default="\t", help="field separator for target file [default= %default]", metavar="character"),
   make_option(c("-c", "--crossreac"), type="character", default=NULL, help="file with list of cross-reactive probes [default= %default]", metavar="character"),
   make_option(c("-o", "--out"), type="character", default="out", help="output directory name [default= %default]", metavar="character"),
-  make_option(c("-s", "--snp_filter"), action="store_true", default=FALSE, type="logical", help="filter SNPs-associated probes [default= %default]", metavar="logical"),
+  make_option(c("-s", "--snp_filter"), action="store_true", default=TRUE, type="logical", help="filter SNPs-associated probes [default= %default]", metavar="logical"),
   make_option(c("-m", "--multimodal_filter"), action="store_true", default=FALSE, type="logical", help="filter multimodal probes [default= %default]", metavar="logical")
 ); 
 
@@ -42,9 +42,10 @@ ann = getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 # crossreac file: "48639-non-specific-probes-Illumina450k.csv"
 
 # To install the specific Illumina packages above
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install("IlluminaHumanMethylationEPICanno.ilm10b4.hg19") # Replace with relevant packages 
+# No more needed if we add them in the required packages in the readme
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#  install.packages("BiocManager")
+#BiocManager::install("IlluminaHumanMethylationEPICanno.ilm10b4.hg19") # Replace with relevant packages 
 
 # A) Load files
 targets = read.table(opt$target,h=T,sep = opt$sep)
@@ -62,12 +63,14 @@ sampleNames(RGSet) = targets$ID
 print(RGSet)
 
 # C) Quality Checks
+# Create output dir and QC dir within output dir
+outdir <- opt$out
+dir.create(outdir, showWarnings = FALSE)
+setwd(outdir)
 dir.create("QC/", showWarnings = FALSE)
-setwd("QC/")
 
 # C.1. Plot quality control plots (package ENmix)
 plotCtrl(RGSet)
-setwd("../")
 
 # C.2. Make PDF QC report (package minfi)
 # To include colouring samples by variable such as sentrix_position include argument: sampGroups=targets$sentrix_position
@@ -77,7 +80,7 @@ qcReport(RGSet, sampNames = targets$sample_id, pdf = "QC/qcReport.pdf")
 # Here samples are coloured by sentrix_position
 nb.levels <- length(unique(targets$sentrix_position))
 mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
-jpeg(paste("UnormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
+jpeg(paste("QC/UnormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
 densityPlot(RGSet, sampGroups = targets$sentrix_id, pal=mycolors, ylim=c(0,5))
 dev.off()
 
@@ -113,9 +116,6 @@ gset <- gset[,keep.samples]
 targets <- targets[keep.samples,]
 
 # E) Write files
-outdir <- opt$out
-dir.create(outdir, showWarnings = FALSE)
-setwd(outdir)
 save(RGSet, file="RGSet.RData")
 save(MSet, file="MSet.RData")
 save(gset, file="gset.RData")
@@ -131,8 +131,12 @@ sva<-ctrlsva(RGSet, percvar = 0.9, flag = 1)
 save(sva, file="sva90.RData")
 
 K = ncol( sva )
-lmsvaFull = lapply(1:K, function(i) lm(sva[,i]~Sentrix_id+Sentrix_position+Center,
-                                       data.frame("Sentrix_id"=as.factor(pData(RGSet)$sentrix_id),"Sentrix_position"=as.factor(pData(RGSet)$sentrix_position),"Center"=as.factor(pData(RGSet)$center) ) ) )
+# When data comes from different centers:
+#lmsvaFull = lapply(1:K, function(i) lm(sva[,i]~Sentrix_id+Sentrix_position+Center,
+#                                       data.frame("Sentrix_id"=as.factor(pData(RGSet)$sentrix_id),"Sentrix_position"=as.factor(pData(RGSet)$sentrix_position),"Center"=as.factor(pData(RGSet)$center) ) ) )
+# When data comes from the same center or unknown center
+lmsvaFull = lapply(1:K, function(i) lm(sva[,i]~Sentrix_id+Sentrix_position,
+                                       data.frame("Sentrix_id"=as.factor(pData(RGSet)$sentrix_id),"Sentrix_position"=as.factor(pData(RGSet)$sentrix_position) ) ) )
 lmsvaRed = vector("list",K)
 for(i in 1:K){
   lmtmp = lmsvaFull[[i]]
@@ -253,7 +257,7 @@ save(detP, detP2, file="PdetectionTables.RData")
 # L) Remove cross-reactive probes
 if(!is.null(opt$crossreac)){
     print("Remove cross-reactive probes")
-# Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
+ Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
     fun1 <- fun1[ ! featureNames(fun1) %in% Cross_reactive, ] 
     print(fun1)
 }else{
@@ -269,14 +273,10 @@ print(fun2)
 
 save(fun2, file="Fun2.RData")
 
-# N) Remove SNP-containing probes
-if(as.logical(opt$snp_filter)){
+# N) Remove SNP-containing probes (mandatory)
     print("Remove SNP-associated probes")
     fun3 = dropLociWithSnps(fun2, snps=c("SBE", "CpG"), maf = 0.05) 
     print(fun3)
-}else{
-    print("Do not remove SNP-associated probes")
-}
 
 save(fun3, file="Fun3.RData")
 
@@ -316,24 +316,3 @@ write.table(targets, file="TargetsFile.csv", sep=",", col.names=NA)
 write.table(betaNorm, file="NormalisedFilteredBetaTable.csv", sep=",", col.names=NA)
 write.table(mNorm, file="NormalisedFilteredMTable.csv", sep=",", col.names=NA)
 write.table(mNoInf, file="NormalisedFilteredMTable_noInf.csv", sep=",", col.names=NA)
-
-
-
-
-################
-# Principal component regression analysis plots
-###############
-# select variables of interest
-head(pData(fun_filtered))
-pData2 <- data.frame(pData(fun_filtered))
-pData2$sentrix_id = as.factor(pData2$sentrix_id)
-
-lev = apply(pData2,2,function(x) table(x))
-pData2 = pData2[,(sapply(lev,max,na.rm=T)>1)&(sapply(lev,nrow)>1) ]
-
-#svg("PCA.svg",h=6,w=6)
-pcrplot(minfi::getBeta(fun_filtered), cov= pData2, npc=20)
-#dev.off()
-
-# write session info
-writeLines(capture.output(sessionInfo()), "sessionInfo.txt")

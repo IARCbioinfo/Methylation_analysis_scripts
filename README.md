@@ -7,12 +7,29 @@ This script performs Illumina EPIC 850K array and Illumina 450K pre-processing a
 
 ## Prerequisites
 This R script requires the following packages:
+- BiocManager
 - minfi
 - ENmix
 - wateRmelon
 - MASS
 - broom
 - RColorBrewer
+- IlluminaHumanMethylationEPICmanifest
+- IlluminaHumanMethylationEPICanno.ilm10b4.hg19
+- IlluminaHumanMethylation450kmanifest
+
+```
+install.packages("BiocManager")
+BiocManager::install("minfi")
+BiocManager::install("ENmix")
+BiocManager::install("wateRmelon")
+install.packages("MASS")
+install.packages("broom")
+install.packages("RColorBrewer")
+BiocManager::install("IlluminaHumanMethylationEPICmanifest")
+BiocManager::install("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
+BiocManager::install("IlluminaHumanMethylation450kmanifest")
+```
 
 ### Usage
 ```bash
@@ -23,9 +40,9 @@ Rscript Methylation_pre-processing.R -f input_folder -t targetfile.txt [options]
 |-----------|--------------:|-------------| 
 *-f* | . | folder with idat files |
 *-o* | out | output directory name |
-*-t* |  . | target file with sample information |
+*-t* |  . | target file with sample information : sample_id, plate_id (can be null), sample_well (can be null), sentrix_id (like "3999492078"), sentrix_position (like "R01C01") |
+*-p* |  \t | target file field separator |
 *-c* | NULL | file with list of cross-reactive probes |
-*-s* | FALSE | filter SNPs-associated probes |
 *-m* | FALSE | filter multimodal probes |
 *-h*    |  | Show help message and exit|
 
