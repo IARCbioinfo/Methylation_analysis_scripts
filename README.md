@@ -17,6 +17,7 @@ This R script requires the following packages:
 - IlluminaHumanMethylationEPICmanifest
 - IlluminaHumanMethylationEPICanno.ilm10b4.hg19
 - IlluminaHumanMethylation450kmanifest
+- IlluminaHumanMethylation450kanno.ilm12.hg19
 
 ```
 install.packages("BiocManager")
@@ -29,6 +30,7 @@ install.packages("RColorBrewer")
 BiocManager::install("IlluminaHumanMethylationEPICmanifest")
 BiocManager::install("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
 BiocManager::install("IlluminaHumanMethylation450kmanifest")
+BiocManager::install("IlluminaHumanMethylation450kanno.ilmn12.hg19")
 ```
 
 ### Usage
