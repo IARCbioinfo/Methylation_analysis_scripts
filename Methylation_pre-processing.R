@@ -194,8 +194,8 @@ targets$predSex <- object$predictedSex
 targets[targets$sex != targets$predSex,]
 
 # I) Normalization
-# Specify sex as clinical or predicted sex depending on which one is accurate 
-fun <- preprocessFunnorm(RGSet, sex=targets$sex) # includes NOOB background/dye correction
+# includes NOOB background/dye correction
+fun <- preprocessFunnorm(RGSet) # If clinical sex is available can use preprocessFunnorm(RGSet, sex=targets$sex), default of sex=NULL uses function getSex to guess the sex
 save(fun, file = "Fun.RData")
 
 # Post normalisation beta density plots
