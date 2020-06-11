@@ -262,9 +262,9 @@ save(detP, detP2, file="PdetectionTables.RData")
 # L) Remove cross-reactive probes
 if(!is.null(opt$crossreac)){
     print("Remove cross-reactive probes")
- Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
-    fun1 <- fun1[ ! featureNames(fun1) %in% Cross_reactive, ] 
-    print(fun1)
+  Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
+  fun1 <- fun1[ ! featureNames(fun1) %in% Cross_reactive, ] 
+  print(fun1)
 }else{
     print("No file with cross-reactive probes supplied; to remove cross-reactive probes, use the -c option")
 }
@@ -279,9 +279,9 @@ print(fun2)
 save(fun2, file="Fun2.RData")
 
 # N) Remove SNP-containing probes (mandatory)
-    print("Remove SNP-associated probes")
-    fun3 = dropLociWithSnps(fun2, snps=c("SBE", "CpG"), maf = 0.05) 
-    print(fun3)
+print("Remove SNP-associated probes")
+fun3 <- dropLociWithSnps(fun2, snps=c("SBE", "CpG"), maf = 0.05) 
+print(fun3)
 
 save(fun3, file="Fun3.RData")
 
@@ -309,12 +309,11 @@ betaNAsNorm <- betaNorm[rownames(betaNorm) %in% NAbetas,] # Should be [1] 0 x nc
 
 # Check for infinite values in m table, replace in the no infinite values m table
 TestInf <- which(apply(mNorm,1,function(i) sum(is.infinite(i)))>0)
-TestInf
+save(TestInf, file="InfiniteValueProbes.RData")
 mNoInf <- mNorm
 mNoInf[!is.finite(mNoInf)] <- min(mNoInf[is.finite(mNoInf)])
 TestInf2 <- which(apply(mNoInf,1,function(i) sum(is.infinite(i)))>0)
 TestInf2 # Should be named integer(0)
-dim(mNoInf) 
 
 # Write tables
 write.table(targets, file="TargetsFile.csv", sep=",", col.names=NA)
