@@ -92,7 +92,6 @@ plotQC(qc) # If U and/or M intensity log medians are <10.5, sample is by default
 dev.off()
 
 if(sum(rowMeans(as.data.frame(qc))<10.5)>0) print(paste("Warning: sample", rownames(qc)[rowMeans(as.data.frame(qc))<10.5], "has mean meth-unmeth signal intensity <10.5. Remove sample."))
-
 # If required: remove any samples with meth or unmeth intensity < 10.5, then remove from all previous files
 keep.samples <- apply(as.data.frame(qc),1,mean) > 10.5
 RGSet <- RGSet[,keep.samples]
@@ -111,7 +110,6 @@ abline(h=0.01,col="red")
 dev.off()
 
 if(sum(colMeans(detP)>0.01)>0 ) print(paste("Warning: sample", names(colMeans(detP))[colMeans(detP)>0.01], "has >0.01 mean detection p-value. Remove sample"))
-
 # If required: remove any samples with detection p value > 0.01, then remove from all previous files
 keep.samples <- apply(detP,2,mean) < 0.01 
 RGSet <- RGSet[,keep.samples]
@@ -124,6 +122,10 @@ targets <- targets[keep.samples,]
 save(RGSet, file="RGSet.RData")
 save(MSet, file="MSet.RData")
 save(gset, file="gset.RData")
+
+size.RGSet <- as.data.frame(t(dim(RGSet)))
+size.MSet <- as.data.frame(t(dim(MSet)))
+size.gset <- as.data.frame(t(dim(gset)))
 
 # F) Create raw unormalised and unfiltered beta table for later comparison
 betaRaw <- getBeta(gset)
@@ -196,6 +198,7 @@ targets[targets$sex != targets$predSex,]
 # I) Normalization
 # includes NOOB background/dye correction
 fun <- preprocessFunnorm(RGSet) # If clinical sex is available can use preprocessFunnorm(RGSet, sex=targets$sex), default of sex=NULL uses function getSex to guess the sex
+size.fun <- as.data.frame(t(dim(fun)))
 save(fun, file = "Fun.RData")
 
 # Post normalisation beta density plots
@@ -257,6 +260,8 @@ failedDF <- as.data.frame(failed)
 check <- fun1[featureNames(fun1) %in% rownames(failedDF), ]
 if(sum(rownames(check)>0)>0) print(paste("Warning: poor performing probes remain in normalised data"))
 
+size.fun1 <- as.data.frame(t(dim(fun1)))
+
 save(detP, detP2, file="PdetectionTables.RData")
 
 # L) Remove cross-reactive probes
@@ -269,6 +274,8 @@ if(!is.null(opt$crossreac)){
     print("No file with cross-reactive probes supplied; to remove cross-reactive probes, use the -c option")
 }
 
+size.fun1a <- as.data.frame(t(dim(fun1)))
+
 save(fun1, file="Fun1.RData")
 
 # M) Remove XY probes
@@ -276,12 +283,16 @@ autosomes = !(rownames(fun1) %in% ann$Name[ann$chr %in% c("chrX","chrY")])
 fun2 = fun1[autosomes,]
 print(fun2)
 
+size.fun2 <- as.data.frame(t(dim(fun2)))
+
 save(fun2, file="Fun2.RData")
 
 # N) Remove SNP-containing probes (mandatory)
 print("Remove SNP-associated probes")
 fun3 <- dropLociWithSnps(fun2, snps=c("SBE", "CpG"), maf = 0.05) 
 print(fun3)
+
+size.fun3 <- as.data.frame(t(dim(fun3)))
 
 save(fun3, file="Fun3.RData")
 
@@ -301,6 +312,9 @@ if(as.logical(opt$multimodal_filter)){
 betaNorm <- getBeta(fun3) 
 mNorm <- getM(fun3) 
 
+size.betaNorm <- as.data.frame(t(dim(betaNorm)))
+size.mNorm <- as.data.frame(t(dim(mNorm)))
+
 # Check for NA and -Inf values
 betaRaw.na <- betaRaw[!complete.cases(betaRaw),]
 dim(betaRaw.na) 
@@ -315,8 +329,18 @@ mNoInf[!is.finite(mNoInf)] <- min(mNoInf[is.finite(mNoInf)])
 TestInf2 <- which(apply(mNoInf,1,function(i) sum(is.infinite(i)))>0)
 TestInf2 # Should be named integer(0)
 
+size.mNoInf <- as.data.frame(t(dim(mNoInf)))
+
 # Write tables
 write.table(targets, file="TargetsFile.csv", sep=",", col.names=NA)
 write.table(betaNorm, file="NormalisedFilteredBetaTable.csv", sep=",", col.names=NA)
 write.table(mNorm, file="NormalisedFilteredMTable.csv", sep=",", col.names=NA)
 write.table(mNoInf, file="NormalisedFilteredMTable_noInf.csv", sep=",", col.names=NA)
+
+# Create dimensions table
+DimensionsTable <- rbind(size.RGSet, size.MSet, size.gset, size.fun, size.fun1, size.fun1a, size.fun2, 
+                         size.fun3, size.betaNorm, size.mNorm, size.mNoInf)
+rownames(DimensionsTable) <- c("RGset_size", "MSet_size", "gset_size", "fun_size", "detP_lost", 
+                               "CrossRx_lost", "XYChr_lost", "SNP_loss", "beta_size", "m_size", "mNoInf_size")
+colnames(DimensionsTable) <- c("Probe_number", "Sample_number")
+write.table(DimensionsTable, file="DimensionsTable.txt", sep="\t", col.names=NA)
