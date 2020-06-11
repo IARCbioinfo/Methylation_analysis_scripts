@@ -41,10 +41,11 @@ library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 ann = getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 # crossreac file: "48639-non-specific-probes-Illumina450k.csv"
 
-# A) Load files
-targets = read.table(opt$target,h=T,sep = opt$sep)
-if(!is.null(opt$crossreac)) Cross_reactive <- read.csv(opt$crossreac,header=F)$V1
-colnames(targets) = tolower(colnames(targets))
+# A) Load targets file
+targets <- read.table(opt$target, h=T, sep=opt$sep)
+# If targets file is a csv use: targets <- read.csv(opt$targets, header=TRUE)
+colnames(targets) <- tolower(colnames(targets))
+targets$barcode <- paste(targets$sentrix_id, targets$sentrix_pos, sep="_")
 rownames(targets) <- as.character(targets$barcode)
 targets$Basename <- rownames(targets)
 head(targets)
