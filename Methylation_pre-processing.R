@@ -91,7 +91,7 @@ par(mfrow=c(1,1),family="Times",las=1)
 plotQC(qc) # If U and/or M intensity log medians are <10.5, sample is by default of bad quality
 dev.off()
 
-if(sum(rowMeans(as.data.frame(qc))<10.5)>0) print(paste("Warning: sample", rownames(qc)[rowMeans(as.data.frame(qc))<10.5], "has mean meth-unmeth signal intensity <10.5"))
+if(sum(rowMeans(as.data.frame(qc))<10.5)>0) print(paste("Warning: sample", rownames(qc)[rowMeans(as.data.frame(qc))<10.5], "has mean meth-unmeth signal intensity <10.5. Remove sample."))
 
 # If required: remove any samples with meth or unmeth intensity < 10.5, then remove from all previous files
 keep.samples <- apply(as.data.frame(qc),1,mean) > 10.5
@@ -110,7 +110,7 @@ barplot(colMeans(detP), col=as.numeric(factor(targets$sentrix_id)), las=2, cex.n
 abline(h=0.01,col="red")
 dev.off()
 
-if(sum(colMeans(detP)>0.01)>0 ) print(paste("Warning: sample", names(colMeans(detP))[colMeans(detP)>0.01], "has >0.01 mean detection p-value" ) )
+if(sum(colMeans(detP)>0.01)>0 ) print(paste("Warning: sample", names(colMeans(detP))[colMeans(detP)>0.01], "has >0.01 mean detection p-value. Remove sample"))
 
 # If required: remove any samples with detection p value > 0.01, then remove from all previous files
 keep.samples <- apply(detP,2,mean) < 0.01 
@@ -255,7 +255,7 @@ print(fun1)
 # Check that the correct probes have been removed - so no probe names in failed should be in fun1
 failedDF <- as.data.frame(failed)
 check <- fun1[featureNames(fun1) %in% rownames(failedDF), ]
-dim(check)
+if(sum(rownames(check)>0)>0) print(paste("Warning: poor performing probes remain in normalised data"))
 
 save(detP, detP2, file="PdetectionTables.RData")
 
