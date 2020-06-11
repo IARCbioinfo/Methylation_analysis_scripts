@@ -68,15 +68,15 @@ dir.create("QC/", showWarnings = FALSE)
 plotCtrl(RGSet)
 
 # C.2. Make PDF QC report (package minfi)
-# To include colouring samples by variable such as sentrix_position include argument: sampGroups=targets$sentrix_position
+# To include colouring samples by variable such as sentrix position include argument: sampGroups=targets$sentrix_pos
 qcReport(RGSet, sampNames = targets$sample_id, pdf = "QC/qcReport.pdf")
 
 # C.3. Make pre-normalisation beta density plots
-# Here samples are coloured by sentrix_position
-nb.levels <- length(unique(targets$sentrix_position))
+# Here samples are coloured by sentrix position
+nb.levels <- length(unique(targets$sentrix_pos))
 mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
 jpeg(paste("QC/UnormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
-densityPlot(RGSet, sampGroups = targets$sentrix_id, pal=mycolors, ylim=c(0,5))
+densityPlot(RGSet, sampGroups = targets$sentrix_pos, pal=mycolors, ylim=c(0,5))
 dev.off()
 
 # C.4. Create MethylSet, RatioSet, then a GenomicRatioSet for further QC
@@ -199,10 +199,10 @@ fun <- preprocessFunnorm(RGSet, sex=targets$sex) # includes NOOB background/dye 
 save(fun, file = "Fun.RData")
 
 # Post normalisation beta density plots
-nb.levels <- length(unique(targets$sentrix_position))
+nb.levels <- length(unique(targets$sentrix_pos))
 mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
 jpeg(paste("NormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
-densityPlot(getBeta(fun), sampGroups = targets$sentrix_position, pal=mycolors, ylim=c(0,5))
+densityPlot(getBeta(fun), sampGroups = targets$sentrix_pos, pal=mycolors, ylim=c(0,5))
 dev.off()
 
 # J) Optional processes
