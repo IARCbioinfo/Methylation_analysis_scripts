@@ -76,7 +76,7 @@ qcReport(RGSet, sampNames = targets$sample_id, pdf = "QC/qcReport.pdf")
 nb.levels <- length(unique(targets$sentrix_pos))
 mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
 jpeg(paste("QC/UnormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
-densityPlot(RGSet, sampGroups = targets$sentrix_pos, pal=mycolors, ylim=c(0,5))
+densityPlot(RGSet, sampGroups = targets$sentrix_pos, pal=mycolors) # Optional inclusion: ylim=c(min,max)
 dev.off()
 
 # C.4. Create MethylSet, RatioSet, then a GenomicRatioSet for further QC
@@ -205,7 +205,7 @@ save(fun, file = "Fun.RData")
 nb.levels <- length(unique(targets$sentrix_pos))
 mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
 jpeg(paste("NormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
-densityPlot(getBeta(fun), sampGroups = targets$sentrix_pos, pal=mycolors, ylim=c(0,5))
+densityPlot(getBeta(fun), sampGroups = targets$sentrix_pos, pal=mycolors) # Optional inclusion: ylim=c(min,max)
 dev.off()
 
 # J) Optional processes
