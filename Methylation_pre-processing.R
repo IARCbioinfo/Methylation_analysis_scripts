@@ -65,6 +65,7 @@ setwd(outdir)
 dir.create("QC/", showWarnings = FALSE)
 
 # C.1. Plot quality control plots (package ENmix)
+setwd("QC/")
 plotCtrl(RGSet)
 
 # C.2. Make PDF QC report (package minfi)
