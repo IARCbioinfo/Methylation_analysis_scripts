@@ -16,10 +16,8 @@ option_list = list(
   make_option(c("-s", "--snp_filter"), action="store_true", default=TRUE, type="logical", help="filter SNPs-associated probes [default= %default]", metavar="logical"),
   make_option(c("-m", "--multimodal_filter"), action="store_true", default=FALSE, type="logical", help="filter multimodal probes [default= %default]", metavar="logical")
 ); 
-
-opt_parser = OptionParser(option_list=option_list);
-opt = parse_args(opt_parser);
-
+opt_parser <- OptionParser(option_list=option_list);
+opt <- parse_args(opt_parser);
 print(opt)
 
 library(minfi)
