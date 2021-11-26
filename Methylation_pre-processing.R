@@ -9,9 +9,9 @@ library("optparse")
 
 option_list = list(
   make_option(c("-f", "--folder"), type="character", default=".", help="folder with idat files [default= %default]", metavar="character"),
-  make_option(c("-t", "--target"), type="character", default=".", help="target file with sample information [default= %default]", metavar="character"),
-  make_option(c("-p", "--sep"), type="character", default="\t", help="field separator for target file [default= %default]", metavar="character"),
-  make_option(c("-c", "--crossreac"), type="character", default=NULL, help="file with list of cross-reactive probes [default= %default]", metavar="character"),
+  make_option(c("-t", "--targets"), type="character", default=".", help="targets file with sample information, must contain columns sample_id, sentrix_id and sentrix_pos [default= %default]", metavar="character"),
+  make_option(c("-p", "--sep"), type="character", default="\t", help="field separator for targets file [default= %default]", metavar="character"),
+  make_option(c("-c", "--crossreac"), type="character", default=NULL, help="file with list of cross-reactive probes, column V1 must contain probe names [default= %default]", metavar="character"),
   make_option(c("-o", "--out"), type="character", default="out", help="output directory name [default= %default]", metavar="character"),
   make_option(c("-s", "--snp_filter"), action="store_true", default=TRUE, type="logical", help="filter SNPs-associated probes [default= %default]", metavar="logical"),
   make_option(c("-m", "--multimodal_filter"), action="store_true", default=FALSE, type="logical", help="filter multimodal probes [default= %default]", metavar="logical")
@@ -30,17 +30,17 @@ library(RColorBrewer)
 # For HumanMethylationEPIC bead chip array files (850k) load the following two packages and two files
 library(IlluminaHumanMethylationEPICmanifest)
 library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
-ann = getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+ann <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
 # crossreac file: "13059_2016_1066_MOESM1_ESM_cross-reactive_probes.csv"
 
 # For HumanMethylation450 bead chip array files (450k) load the following packages and two files
 library(IlluminaHumanMethylation450kmanifest)
 library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-ann = getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 # crossreac file: "48639-non-specific-probes-Illumina450k.csv"
 
 # A) Load targets file
-targets <- read.table(opt$target, h=T, sep=opt$sep)
+targets <- read.table(opt$targets, h=T, sep=opt$sep)
 # If targets file is a csv use: targets <- read.csv(opt$targets, header=TRUE)
 colnames(targets) <- tolower(colnames(targets))
 targets$barcode <- paste(targets$sentrix_id, targets$sentrix_pos, sep="_")
@@ -58,22 +58,22 @@ print(RGSet)
 # C) Quality Checks
 # Create output dir and QC dir within output dir
 outdir <- opt$out
-dir.create(outdir, showWarnings = FALSE)
 setwd(outdir)
 dir.create("QC/", showWarnings = FALSE)
+setwd(paste0(out,"QC/"))
 
 # C.1. Plot quality control plots (package ENmix)
 plotCtrl(RGSet)
 
 # C.2. Make PDF QC report (package minfi)
 # To include colouring samples by variable such as sentrix position include argument: sampGroups=targets$sentrix_pos
-qcReport(RGSet, sampNames = targets$sample_id, pdf = "QC/qcReport.pdf")
+qcReport(RGSet, sampNames = targets$sample_id, pdf = "qcReport.pdf")
 
 # C.3. Make pre-normalisation beta density plots
 # Here samples are coloured by sentrix position
 nb.levels <- length(unique(targets$sentrix_pos))
 mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.levels)
-jpeg(paste("QC/UnormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
+jpeg(paste("UnormalisedBetaDensityPlot_bySentrixPosition.jpg",sep="/"), width=800, height=800)
 densityPlot(RGSet, sampGroups = targets$sentrix_pos, pal=mycolors, ylim=c(0,5))
 dev.off()
 
@@ -84,7 +84,7 @@ gset <- mapToGenome(ratioSet, mergeManifest=T)
 
 # C.5. Perform QC on MSet and plot methylated versus unmethylated intensities
 qc <- getQC(MSet)
-pdf("QC/Meth-unmeth_intensities.pdf",h=4,w=4)
+pdf("Meth-unmeth_intensities.pdf",h=4,w=4)
 par(mfrow=c(1,1),family="Times",las=1)
 plotQC(qc) # If U and/or M intensity log medians are <10.5, sample is by default of bad quality
 dev.off()
@@ -101,7 +101,7 @@ targets <- targets[keep.samples,]
 # D) Calculate detection p values and plot 
 # Here the samples are coloured by sentrix ID to check for poor performing chips
 detP <- detectionP(RGSet)
-pdf("QC/detection_pvalues.pdf",h=4,w=4)
+pdf("detection_pvalues.pdf",h=4,w=4)
 par(mfrow=c(1,1),family="Times",las=1)
 barplot(colMeans(detP), col=as.numeric(factor(targets$sentrix_id)), las=2, cex.names=0.8, ylim=c(0,0.05), ylab="Mean detection p-values")
 abline(h=0.01,col="red")
@@ -117,6 +117,7 @@ gset <- gset[,keep.samples]
 targets <- targets[keep.samples,]
 
 # E) Write files
+setwd(out)
 save(RGSet, file="RGSet.RData")
 save(MSet, file="MSet.RData")
 save(gset, file="gset.RData")
